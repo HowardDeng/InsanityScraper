@@ -111,7 +111,9 @@ def findChildPage(myURL):
 
     # record down main page
     pageUrl = myURL
-    filePath = downloadDir + pageUrl.replace(':', '').replace('/', '')
+    filePath = downloadDir + pageUrl.replace(':', '').replace('/', '').replace(
+        '\\', '').replace('"', '').replace('*', '').replace('<', '').replace(
+            '>', '').replace('?', '').replace('|', '')
     recordDownProcess(pageUrl, filePath, 'P', 'P')
     downloadPage(pageUrl, filePath)
     searchFile(pageUrl, filePath, keys)
@@ -138,7 +140,16 @@ def findChildPage(myURL):
         if len(result) > 0:
             continue
         # record down next page
-        filePath = downloadDir + pageUrl.replace(':', '').replace('/', '')
+        if pageUrl.endswith('.doc'):
+            continue
+        if pageUrl.endswith('.docx'):
+            continue
+        if pageUrl.endswith('.xls'):
+            continue
+        filePath = downloadDir + pageUrl.replace(':', '').replace(
+            '/',
+            '').replace('\\', '').replace('"', '').replace('*', '').replace(
+                '<', '').replace('>', '').replace('?', '').replace('|', '')
         recordDownProcess(pageUrl, filePath, 'P', 'P')
         downloadPage(pageUrl, filePath)
         searchFile(pageUrl, filePath, keys)
@@ -204,7 +215,16 @@ def findChildPageWithoutInit(driver, fatherUrl):
         if len(result) > 0:
             continue
         # record down next page
-        filePath = downloadDir + pageUrl.replace(':', '').replace('/', '')
+        if pageUrl.endswith('.doc'):
+            continue
+        if pageUrl.endswith('.docx'):
+            continue
+        if pageUrl.endswith('.xls'):
+            continue
+        filePath = downloadDir + pageUrl.replace(':', '').replace(
+            '/',
+            '').replace('\\', '').replace('"', '').replace('*', '').replace(
+                '<', '').replace('>', '').replace('?', '').replace('|', '')
         recordDownProcess(pageUrl, filePath, 'P', 'P')
         downloadPage(pageUrl, filePath)
         searchFile(pageUrl, filePath, keys)
