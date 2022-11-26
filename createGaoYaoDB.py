@@ -13,6 +13,9 @@ cursor = conn.cursor()
 # result = cursor.fetchall()
 # print(result)
 # delete all records
+# cursor.execute('delete from searchControl')
+# conn.commit()
+# cursor.execute('alter table searchControl add column x0keys varchar(500)')
 cursor.execute('delete from searchControl')
 conn.commit()
 # close connection and cursor
