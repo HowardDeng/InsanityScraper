@@ -15,9 +15,11 @@ import sqlite3
 import queue
 
 downloadDir = 'C:\\download\\'
+configDir = 'C:\\config\\'
 myDriver = 'C:\\Program Files\\Google\\Chrome\\Application\\chromedriver.exe'
 homePage = 'http://www.gaoyao.gov.cn/'
 q = queue.Queue()
+keys = []
 
 
 def page1(myDriver, myFolder):
@@ -107,6 +109,13 @@ def findChildPage(myURL):
         print("It could not find the child page")
         return 1
 
+    # record down main page
+    pageUrl = myURL
+    filePath = downloadDir + pageUrl.replace(':', '').replace('/', '')
+    recordDownProcess(pageUrl, filePath, 'P', 'P')
+    downloadPage(pageUrl, filePath)
+    searchFile(pageUrl, filePath, keys)
+
     # record down child link
     pageElements = driver.find_elements(By.CSS_SELECTOR, "a")
     if len(pageElements) < 1:
@@ -131,6 +140,8 @@ def findChildPage(myURL):
         # record down next page
         filePath = downloadDir + pageUrl.replace(':', '').replace('/', '')
         recordDownProcess(pageUrl, filePath, 'P', 'P')
+        downloadPage(pageUrl, filePath)
+        searchFile(pageUrl, filePath, keys)
         q.put(pageUrl)
 
     while not q.empty():
@@ -195,6 +206,8 @@ def findChildPageWithoutInit(driver, fatherUrl):
         # record down next page
         filePath = downloadDir + pageUrl.replace(':', '').replace('/', '')
         recordDownProcess(pageUrl, filePath, 'P', 'P')
+        downloadPage(pageUrl, filePath)
+        searchFile(pageUrl, filePath, keys)
         q.put(pageUrl)
 
     while not q.empty():
@@ -217,18 +230,35 @@ def downloadPage(pageUrl, filePath):
     recordDownProcess(pageUrl, filePath, 'S', 'P')
 
 
-def searchFile(pageUrl, filePath, keyWord):
-    print('search ' + keyWord + ' in ' + filePath)
+def searchFile(pageUrl, filePath, keyWords):
+    print('search ' + str(keyWords) + ' in ' + filePath)
     fr = open(filePath, 'r+', encoding='utf8')
     fb = fr.read()
-    if fb.__contains__(keyWord):
-        recordDownProcess(pageUrl, filePath, 'S', 'E')
+    containsKeyword = ''
+    for keyWord in keyWords:
+        if fb.__contains__(keyWord):
+            containsKeyword += keyWord + ','
+
+    if containsKeyword and containsKeyword != '':
+        recordDownProcess(pageUrl, filePath, 'S', 'E', containsKeyword)
     else:
-        recordDownProcess(pageUrl, filePath, 'S', 'S')
+        recordDownProcess(pageUrl, filePath, 'S', 'S', containsKeyword)
     fr.close()
 
 
-def recordDownProcess(pageUrl, filePath, downloadStatus, searchStatus):
+def readKeysControl(keyFilePath):
+    global keys
+    fr = open(keyFilePath, 'r+', encoding='utf8')
+    for key in fr.readlines():
+        keys.append(key.replace('\n', ''))
+    fr.close()
+
+
+def recordDownProcess(pageUrl,
+                      filePath,
+                      downloadStatus,
+                      searchStatus,
+                      containsKeyword=''):
     print('record down url :' + pageUrl + ' file path :' + filePath +
           ' download status :' + downloadStatus + ' search status ' +
           searchStatus)
@@ -240,13 +270,15 @@ def recordDownProcess(pageUrl, filePath, downloadStatus, searchStatus):
     result = cursor.fetchall()
     if len(result) > 0:
         cursor.execute(
-            "update searchControl set x0download='{}',x0search='{}' where x0url='{}' and x0file='{}'"
-            .format(downloadStatus, searchStatus, pageUrl, filePath))
+            "update searchControl set x0download='{}',x0search='{}',x0keys='{}' where x0url='{}' and x0file='{}'"
+            .format(downloadStatus, searchStatus, containsKeyword, pageUrl,
+                    filePath))
         print('record updated')
     else:
         cursor.execute(
-            "insert into searchControl values ('{}','{}','{}','{}')".format(
-                pageUrl, filePath, downloadStatus, searchStatus))
+            "insert into searchControl values ('{}','{}','{}','{}','{}')".
+            format(pageUrl, filePath, containsKeyword, downloadStatus,
+                   searchStatus))
         print('record inserted')
     # verify db result
     conn.commit()
@@ -275,9 +307,10 @@ def main2():
 
 
 def main():
-    # downloadPage('http://www.gaoyao.gov.cn/', downloadDir + 'test.txt')
     # searchFile('http://www.gaoyao.gov.cn/', downloadDir + 'test.txt', '政民互吧动')
+    readKeysControl(configDir + 'keys.txt')
     findChildPage(homePage)
+    print(keys)
 
 
 if __name__ == "__main__":
