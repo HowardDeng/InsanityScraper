@@ -18,6 +18,8 @@ downloadDir = 'C:\\download\\'
 configDir = 'C:\\config\\'
 myDriver = 'C:\\Program Files\\Google\\Chrome\\Application\\chromedriver.exe'
 homePage = 'http://www.gaoyao.gov.cn/'
+excludeUrlchar = [':', '/', '\\', '"', '*', '<', '>', '?', '|']
+excludePageSuffix = ['.doc', '.docx', '.xls', '.xlsx', '.xlsm', '.pdf', '.rar']
 q = queue.Queue()
 keys = []
 
@@ -51,9 +53,12 @@ def findChildPage(myURL):
 
     # record down main page
     pageUrl = myURL
-    filePath = downloadDir + pageUrl.replace(':', '').replace('/', '').replace(
-        '\\', '').replace('"', '').replace('*', '').replace('<', '').replace(
-            '>', '').replace('?', '').replace('|', '')
+    pageUrlFileName = pageUrl
+    #remove illegal char in file name
+    for excludeChar in excludeUrlchar:
+        pageUrlFileName = pageUrlFileName.replace(excludeChar, '')
+
+    filePath = downloadDir + pageUrlFileName
     recordDownProcess(pageUrl, filePath, 'P', 'P')
     downloadPage(pageUrl, filePath)
     searchFile(pageUrl, filePath, keys)
@@ -79,20 +84,25 @@ def findChildPage(myURL):
         conn.close()
         if len(result) > 0:
             continue
-        # record down next page
-        if pageUrl.endswith('.doc'):
+        # skip invalid page
+        invalidPage = False
+        for suffix in excludePageSuffix:
+            if pageUrl.endswith(suffix):
+                invalidPage = True
+                break
+        if invalidPage is True:
             continue
-        if pageUrl.endswith('.docx'):
-            continue
-        if pageUrl.endswith('.xls'):
-            continue
-        filePath = downloadDir + pageUrl.replace(':', '').replace(
-            '/',
-            '').replace('\\', '').replace('"', '').replace('*', '').replace(
-                '<', '').replace('>', '').replace('?', '').replace('|', '')
+
+        pageUrlFileName = pageUrl
+        # remove illegal char in file name
+        for excludeChar in excludeUrlchar:
+            pageUrlFileName = pageUrlFileName.replace(excludeChar, '')
+
+        filePath = downloadDir + pageUrlFileName
         recordDownProcess(pageUrl, filePath, 'P', 'P')
         downloadPage(pageUrl, filePath)
         searchFile(pageUrl, filePath, keys)
+        # record down next page
         q.put(pageUrl)
 
     while not q.empty():
@@ -154,20 +164,25 @@ def findChildPageWithoutInit(driver, fatherUrl):
             return 1
         if len(result) > 0:
             continue
-        # record down next page
-        if pageUrl.endswith('.doc'):
+        # skip invalid page
+        invalidPage = False
+        for suffix in excludePageSuffix:
+            if pageUrl.endswith(suffix):
+                invalidPage = True
+                break
+        if invalidPage is True:
             continue
-        if pageUrl.endswith('.docx'):
-            continue
-        if pageUrl.endswith('.xls'):
-            continue
-        filePath = downloadDir + pageUrl.replace(':', '').replace(
-            '/',
-            '').replace('\\', '').replace('"', '').replace('*', '').replace(
-                '<', '').replace('>', '').replace('?', '').replace('|', '')
+
+        pageUrlFileName = pageUrl
+        #remove illegal char in file name
+        for excludeChar in excludeUrlchar:
+            pageUrlFileName = pageUrlFileName.replace(excludeChar, '')
+
+        filePath = downloadDir + pageUrlFileName
         recordDownProcess(pageUrl, filePath, 'P', 'P')
         downloadPage(pageUrl, filePath)
         searchFile(pageUrl, filePath, keys)
+        # record down next page
         q.put(pageUrl)
 
     while not q.empty():
